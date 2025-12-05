@@ -1,135 +1,128 @@
 <template>
   <div class="max-w-4xl mx-auto">
     <!-- Toast 提示 -->
-    <transition name="toast">
-      <div
-        v-if="showMessage"
-        class="fixed top-4 right-4 z-50 px-6 py-3 bg-green-600 text-white rounded-lg shadow-lg flex items-center gap-2"
-      >
-        <span class="text-xl">✓</span>
-        <span>{{ messageText }}</span>
-      </div>
-    </transition>
+    <teleport to="body">
+      <transition name="toast">
+        <div
+          v-if="showMessage"
+          class="fixed top-6 right-6 z-50 glass rounded-2xl shadow-soft-lg border border-green-200 dark:border-green-800 p-4 max-w-sm"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
+              <span class="text-xl">✅</span>
+            </div>
+            <p class="text-green-800 dark:text-green-200 font-medium">{{ messageText }}</p>
+          </div>
+        </div>
+      </transition>
+    </teleport>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="text-center py-20">
-      <div class="text-4xl mb-4">⏳</div>
-      <p class="text-gray-600 dark:text-gray-400">加载中...</p>
+    <div v-if="loading" class="card text-center py-20">
+      <span class="text-5xl mb-4 block animate-bounce">⏳</span>
+      <p class="text-gray-500 dark:text-gray-400">加载中...</p>
     </div>
 
     <!-- 单词详情 -->
     <div v-else-if="wordData" class="space-y-6">
-      <!-- 标题和操作 -->
-      <div class="card">
-        <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <div class="flex items-center gap-4 mb-2">
-              <h1 class="text-4xl font-bold text-gray-900 dark:text-gray-100">
-                {{ wordData.word }}
-              </h1>
-              <SpeakerButton 
-                :text="wordData.word"
-                :lang="'en'"
-                :speed="0.8"
-              />
-            </div>
-            <div v-if="currentPhonetic || phoneticLoading" class="mb-4">
-              <div v-if="phoneticLoading" class="text-gray-500 dark:text-gray-400">
-                <div class="inline-flex items-center gap-2">
-                  <div class="w-4 h-4 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+      <!-- 标题卡片 -->
+      <div class="card relative overflow-hidden">
+        <!-- 装饰背景 -->
+        <div class="absolute inset-0 bg-gradient-to-br from-primary-50 via-transparent to-purple-50 dark:from-primary-900/20 dark:to-purple-900/20"></div>
+        
+        <div class="relative z-10">
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            <div class="flex-1">
+              <div class="flex items-center gap-4 mb-4">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100">
+                  {{ wordData.word }}
+                </h1>
+                <SpeakerButton :text="wordData.word" :lang="'en'" :speed="0.8" />
+              </div>
+              
+              <div v-if="currentPhonetic || phoneticLoading" class="mb-4">
+                <div v-if="phoneticLoading" class="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                  <span class="animate-spin">⏳</span>
                   获取音标中...
                 </div>
+                <p v-else-if="currentPhonetic" class="text-xl text-gray-500 dark:text-gray-400 font-mono">
+                  [{{ currentPhonetic }}]
+                </p>
               </div>
-              <p v-else-if="currentPhonetic" class="text-xl text-gray-600 dark:text-gray-400">
-                [{{ currentPhonetic }}]
-              </p>
+              
+              <div class="p-4 rounded-xl bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-900/50">
+                <p class="text-primary-800 dark:text-primary-200 leading-relaxed">
+                  {{ wordData.concise_definition }}
+                </p>
+              </div>
             </div>
-            <div class="inline-block px-4 py-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
-              <p class="text-gray-800 dark:text-gray-200">
-                {{ wordData.concise_definition }}
-              </p>
-            </div>
-          </div>
 
-          <div class="flex gap-2">
-            <button
-              v-if="userStore.isAuthenticated"
-              @click="addToLearning"
-              class="btn btn-primary"
-              title="加入学习"
-            >
-              📚 加入学习
-            </button>
-            <button
-              v-if="userStore.isAuthenticated"
-              @click="toggleCollection"
-              :class="[
-                'btn',
-                isCollected ? 'btn-primary' : 'btn-outline'
-              ]"
-            >
-              {{ isCollected ? '⭐' : '☆' }}
-            </button>
+            <div v-if="userStore.isAuthenticated" class="flex flex-row md:flex-col gap-3">
+              <button @click="addToLearning" class="btn btn-primary flex-1 md:flex-none">
+                <span>📚</span>
+                加入学习
+              </button>
+              <button
+                @click="toggleCollection"
+                :class="['btn flex-1 md:flex-none', isCollected ? 'btn-primary' : 'btn-outline']"
+              >
+                {{ isCollected ? '⭐ 已收藏' : '☆ 收藏' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 词形变化 -->
       <div v-if="wordData.forms && Object.keys(wordData.forms).length > 0" class="card">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-3">
+          <span class="text-2xl">🔄</span>
           词形变化
         </h2>
         <div class="flex flex-wrap gap-3">
           <div
             v-for="(value, key) in wordData.forms"
             :key="key"
-            class="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg"
+            class="badge badge-primary text-sm py-2 px-4"
           >
-            <span class="text-sm text-gray-600 dark:text-gray-400">{{ key }}</span>
-            <span class="ml-2 font-medium text-gray-900 dark:text-gray-100">{{ value }}</span>
+            <span class="opacity-70 mr-2">{{ key }}</span>
+            <span class="font-semibold">{{ value }}</span>
           </div>
         </div>
       </div>
 
       <!-- 详细释义 -->
       <div v-if="wordData.definitions" class="card">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-3">
+          <span class="text-2xl">📚</span>
           详细释义
         </h2>
         <div class="space-y-6">
           <div
             v-for="(def, index) in wordData.definitions"
             :key="index"
-            class="border-l-4 border-primary-500 pl-4"
+            class="p-5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border-l-4 border-primary-500"
           >
-            <div class="flex items-center gap-2 mb-3">
-              <span class="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm font-semibold">
-                {{ def.pos }}
-              </span>
-            </div>
+            <span class="badge badge-primary mb-4">{{ def.pos }}</span>
             
-            <div class="space-y-3">
+            <div class="space-y-4">
               <div>
-                <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">英文解释：</div>
-                <p class="text-gray-700 dark:text-gray-300">{{ def.explanation_en }}</p>
+                <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">英文解释</div>
+                <p class="text-gray-600 dark:text-gray-300 leading-relaxed">{{ def.explanation_en }}</p>
               </div>
               
               <div>
-                <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">中文解释：</div>
-                <p class="text-gray-900 dark:text-gray-100 font-medium">{{ def.explanation_cn }}</p>
+                <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">中文解释</div>
+                <p class="text-gray-900 dark:text-gray-100 font-medium leading-relaxed">{{ def.explanation_cn }}</p>
               </div>
               
-              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="text-sm text-gray-500 dark:text-gray-400">例句：</div>
-                  <SentenceSpeaker 
-                    :text="def.example_en"
-                    :lang="'en'"
-                    :speed="0.8"
-                  />
+              <div v-if="def.example_en" class="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">例句</div>
+                  <SentenceSpeaker :text="def.example_en" :lang="'en'" :speed="0.8" />
                 </div>
-                <p class="text-gray-700 dark:text-gray-300 mb-2">{{ def.example_en }}</p>
-                <p class="text-gray-900 dark:text-gray-100">{{ def.example_cn }}</p>
+                <p class="text-gray-600 dark:text-gray-400 italic mb-2 leading-relaxed">{{ def.example_en }}</p>
+                <p class="text-gray-800 dark:text-gray-200 leading-relaxed">{{ def.example_cn }}</p>
               </div>
             </div>
           </div>
@@ -138,42 +131,41 @@
 
       <!-- 近义词对比 -->
       <div v-if="wordData.comparison && wordData.comparison.length > 0" class="card">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-3">
+          <span class="text-2xl">⚖️</span>
           相似词辨析
         </h2>
         <div class="space-y-4">
           <div
             v-for="(comp, index) in wordData.comparison"
             :key="index"
-            class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+            class="p-5 rounded-xl bg-gray-50 dark:bg-gray-800/50"
           >
-            <div class="flex items-center gap-2 mb-2">
-              <h3 class="font-semibold text-lg text-gray-900 dark:text-gray-100">
-                {{ wordData.word }}
-              </h3>
-              <span class="text-gray-400">vs</span>
+            <div class="flex items-center gap-3 mb-3">
+              <span class="font-bold text-lg text-primary-600 dark:text-primary-400">{{ wordData.word }}</span>
+              <span class="text-gray-400 font-medium">vs</span>
               <router-link
                 :to="{ name: 'WordDetail', params: { word: comp.word_to_compare } }"
-                class="font-semibold text-lg text-primary-600 dark:text-primary-400 hover:underline"
+                class="font-bold text-lg text-purple-600 dark:text-purple-400 hover:underline"
               >
                 {{ comp.word_to_compare }}
               </router-link>
             </div>
-            <p class="text-gray-700 dark:text-gray-300">
-              {{ comp.analysis }}
-            </p>
+            <p class="text-gray-600 dark:text-gray-300 leading-relaxed">{{ comp.analysis }}</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 错误提示 -->
-    <div v-else class="text-center py-20">
-      <div class="text-4xl mb-4">❌</div>
-      <p class="text-red-600 dark:text-red-400 mb-4">
-        {{ error || '未找到该单词' }}
-      </p>
+    <div v-else class="card max-w-md mx-auto text-center py-16">
+      <div class="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/50 dark:to-red-800/50 flex items-center justify-center">
+        <span class="text-4xl">❌</span>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">未找到单词</h2>
+      <p class="text-red-600 dark:text-red-400 mb-8">{{ error || '该单词不存在或加载失败' }}</p>
       <button @click="$router.back()" class="btn btn-primary">
+        <span>←</span>
         返回
       </button>
     </div>
@@ -209,17 +201,14 @@ const isCollected = computed(() => {
   return learningStore.isCollected(wordData.value.word)
 })
 
-// 获取音标
 async function fetchPhonetic() {
   if (!wordData.value?.word) return
-  
   phoneticLoading.value = true
-  
   try {
     const phonetic = await getPhonetic(wordData.value.word, wordData.value.pronunciation)
     currentPhonetic.value = phonetic || ''
-  } catch (error) {
-    console.warn('获取音标失败:', error)
+  } catch (err) {
+    console.warn('获取音标失败:', err)
     currentPhonetic.value = wordData.value.pronunciation || ''
   } finally {
     phoneticLoading.value = false
@@ -235,10 +224,8 @@ async function loadWord() {
 
   try {
     wordData.value = await dictionaryStore.getWordDetail(word)
-    // 加载单词后获取音标和自动朗读
     if (wordData.value) {
       await fetchPhonetic()
-      // 延迟自动朗读，避免阻塞页面加载
       setTimeout(async () => {
         await autoSpeak(wordData.value.word, 'wordDetail')
       }, 200)
@@ -253,7 +240,6 @@ async function loadWord() {
 
 async function toggleCollection() {
   if (!wordData.value || !userStore.isAuthenticated) return
-
   if (isCollected.value) {
     await learningStore.removeCollection(wordData.value.word)
   } else {
@@ -261,7 +247,6 @@ async function toggleCollection() {
   }
 }
 
-// 显示提示消息
 function showMessageFunc(text) {
   messageText.value = text
   showMessage.value = true
@@ -272,46 +257,32 @@ function showMessageFunc(text) {
 
 async function addToLearning() {
   if (!wordData.value || !userStore.isAuthenticated) return
-
   try {
-    // 将单词标记为"不认识"（质量评分 1），加入学习
     const result = await learningStore.updateWordProgress(wordData.value.word, 1)
-    
     if (result.success) {
-      // 提示用户
-      showMessageFunc('已加入学习！这个单词将被标记为"不认识"，系统会定期提醒你复习。')
+      showMessageFunc('已加入学习！系统会定期提醒你复习。')
     } else {
       showMessageFunc('加入学习失败，请稍后重试。')
     }
-  } catch (error) {
-    console.error('加入学习失败:', error)
+  } catch (err) {
+    console.error('加入学习失败:', err)
     showMessageFunc('加入学习失败，请稍后重试。')
   }
 }
 
-watch(() => route.params.word, () => {
-  loadWord()
-})
-
-onMounted(() => {
-  loadWord()
-})
+watch(() => route.params.word, () => loadWord())
+onMounted(() => loadWord())
 </script>
 
 <style scoped>
-/* Toast 过渡效果 */
-.toast-enter-active, .toast-leave-active {
-  transition: all 0.3s ease;
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.toast-enter-from {
-  opacity: 0;
-  transform: translateX(100%);
-}
-
+.toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateX(100%);
+  transform: translateX(20px);
 }
 </style>
-

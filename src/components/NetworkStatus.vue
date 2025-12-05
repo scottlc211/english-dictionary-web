@@ -1,29 +1,55 @@
 <template>
-  <transition name="fade">
-    <div 
-      v-if="showOffline" 
-      class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-yellow-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50"
-    >
-      <span class="text-2xl">📡</span>
-      <div class="flex-1">
-        <div class="font-semibold">离线模式</div>
-        <div class="text-sm opacity-90">数据将在恢复连接后自动同步</div>
+  <teleport to="body">
+    <transition name="toast">
+      <div 
+        v-if="showOffline" 
+        class="fixed bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-50"
+      >
+        <div class="glass rounded-2xl shadow-soft-lg border border-amber-200 dark:border-amber-800 p-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+              <span class="text-2xl">📡</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-amber-800 dark:text-amber-200">
+                离线模式
+              </div>
+              <div class="text-sm text-amber-600 dark:text-amber-400 mt-0.5">
+                数据将在恢复连接后自动同步
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </transition>
+    </transition>
 
-  <transition name="fade">
-    <div 
-      v-if="showSyncing" 
-      class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-blue-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50"
-    >
-      <span class="text-2xl animate-spin">🔄</span>
-      <div class="flex-1">
-        <div class="font-semibold">正在同步...</div>
-        <div class="text-sm opacity-90">正在保存您的学习进度</div>
+    <transition name="toast">
+      <div 
+        v-if="showSyncing" 
+        class="fixed bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-50"
+      >
+        <div class="glass rounded-2xl shadow-soft-lg border border-primary-200 dark:border-primary-800 p-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center flex-shrink-0">
+              <span class="text-2xl animate-spin">🔄</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-primary-800 dark:text-primary-200">
+                正在同步...
+              </div>
+              <div class="text-sm text-primary-600 dark:text-primary-400 mt-0.5">
+                正在保存您的学习进度
+              </div>
+            </div>
+          </div>
+          <!-- 进度条 -->
+          <div class="mt-3 progress">
+            <div class="progress-bar animate-pulse" style="width: 60%"></div>
+          </div>
+        </div>
       </div>
-    </div>
-  </transition>
+    </transition>
+  </teleport>
 </template>
 
 <script setup>
@@ -39,7 +65,6 @@ const showSyncing = ref(false)
 let offlineTimer = null
 let syncingTimer = null
 
-// 更新在线状态
 function updateOnlineStatus() {
   isOnline.value = navigator.onLine
   
@@ -47,19 +72,16 @@ function updateOnlineStatus() {
     showOffline.value = true
   } else {
     showOffline.value = false
-    // 恢复在线时立即同步
     if (learningStore && !learningStore.isSyncing) {
       learningStore.syncWithServer()
     }
   }
 }
 
-// 监听同步状态
 watch(() => learningStore.isSyncing, (syncing) => {
   if (syncing) {
     showSyncing.value = true
   } else {
-    // 延迟隐藏，让用户看到同步完成
     syncingTimer = setTimeout(() => {
       showSyncing.value = false
     }, 1500)
@@ -80,15 +102,14 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.3s ease;
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.toast-enter-from,
+.toast-leave-to {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(20px) scale(0.95);
 }
 </style>
-
